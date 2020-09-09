@@ -1,0 +1,204 @@
+:project:
+  :build_root: build/ceedling/generated
+  :test_file_prefix: test_
+  :which_ceedling: vendor/ceedling
+  :use_exceptions: FALSE
+  :release_build: FALSE
+  :use_test_preprocessor: FALSE
+  :use_auxiliary_dependencies: TRUE
+  :default_tasks:
+    - test:all
+
+:environment:
+  - :mcu: PIC16F18345
+  - :mplabx_root: "C:/MPLABX/"
+  - :path:
+    - "C:/xc8/bin"
+    - 'D:/Ruby26-x64/bin'
+    - "#{ENV['PATH']}"
+    - build
+
+
+#:test_build:
+#  :use_assembly: TRUE
+
+#:release_build:
+#  :output: MyApp.out
+#  :use_assembly: FALSE
+
+
+
+:extension:
+  :object: .p1
+  :executable: .elf
+  :assembly: .S
+
+:paths:
+  :test:
+    - +:test/**
+    - -:test/support
+  :source:
+    - src/**
+  :include:
+    - "C:/xc8/pic/include"
+  :support:
+    - test/support
+  :libraries: []
+
+:defines:
+  # in order to add common defines:
+  #  1) remove the trailing [] from the :common: section
+  #  2) add entries to the :common: section (e.g. :test: has TEST defined)
+  :commmon: &common_defines []
+  :test:
+    - *common_defines
+#    - UNITY_INCLUDE_CONFIG_H
+    - UNITY_OUTPUT_COLOR #this is just here to make sure it gets removed by ceedling
+    - TEST
+  :test_preprocess:
+    - *common_defines
+    - TEST
+:unity:
+  :defines:
+    - UNITY_EXCLUDE_SETJMP_H
+    - UNITY_EXCLUDE_MATH_H
+    - UNITY_EXCLUDE_FLOAT
+    
+:cmock:
+  :mock_prefix: mock_
+  :when_no_prototypes: :warn
+  :treat_externs: :include
+  :enforce_strict_ordering: TRUE
+  :fail_on_unexpected_calls: FALSE
+  :has_setjmp_h: FALSE
+  :defines:
+    - CMOCK_MEM_SIZE=256
+  :plugins:
+    - :ignore
+    - :ignore_arg
+    - :callback
+    - :expect_any_args
+  :treat_as:
+    uint8:    HEX8
+    uint16:   HEX16
+    uint32:   UINT32
+    int8:     INT8
+    bool:     UINT8
+
+# Add -gcov to the plugins list to make sure of the gcov plugin
+# You will need to have gcov and gcovr both installed to make it work.
+# For more information on these options, see docs in plugins/gcov
+:gcov:
+  :reports:
+    - HtmlDetailed
+  :gcovr:
+    :html_medium_threshold: 75
+    :html_high_threshold: 90
+
+:tools:
+  :release_compiler:
+    :name: "Microchip XC8 Compiler"
+    :executable: xc8-cc
+    :arguments:
+      - "-mcpu=#{ENV['MCU']}"
+      - -std=c99
+      - -O1
+      - -Wa,-a
+      - -D"$": COLLECTION_DEFINES_RELEASE_AND_VENDOR
+      - -I"$": COLLECTION_PATHS_SOURCE_AND_INCLUDE
+      - -Iinclude/
+      - -o "${2}"
+      - -c
+      - "${1}"
+
+  :release_assembler:
+    :name: "Microchip XC8 Compiler"
+    :executable: xc8-cc
+    :arguments:
+      - "-mcpu=#{ENV['MCU']}"
+      - -std=c99
+      - -O1
+      - -Wa,-a
+      - -D"$": COLLECTION_DEFINES_RELEASE_AND_VENDOR
+      - -I"$": COLLECTION_PATHS_SOURCE_AND_INCLUDE
+      - -o "${2}"
+      - -c
+      - "${1}"
+
+  :release_linker:
+    :name: "Microchip XC8 Linker"
+    :executable: xc8-cc
+    :arguments:
+      - "-mcpu=#{ENV['MCU']}"
+      - -gdwarf-3
+      - -D"$": COLLECTION_DEFINES_RELEASE_AND_VENDOR
+      - -I"$": COLLECTION_PATHS_SOURCE_AND_INCLUDE
+      - -Wl,-Map="${3}"
+      - -o "${2}"
+      - "{'${1}'.split(' ').map { |x| (x.include? '/out/c/') ? (Pathname(x).sub_ext('.p1')).to_s : x }.join(' ') }"
+      - "${4}"
+
+  :test_compiler:
+    :name: "Microchip XC8 Compiler"
+    :executable: xc8-cc
+    :arguments:
+      - -mcpu=#{ENV['MCU']}
+      - -std=c99
+      - -O1
+      - -Wa,-a
+      - -D"$": COLLECTION_DEFINES_TEST_AND_VENDOR
+      - -I"$": COLLECTION_PATHS_TEST_SUPPORT_SOURCE_INCLUDE_VENDOR
+      - -Iinclude/
+      - -o "${2}"
+      - -c
+      - "${1}"
+
+  :test_file_preprocessor:
+    :name: "Microchip XC8 preprocessor"
+    :executable: xc8-cc
+    :arguments:
+      - -mcpu=#{ENV['MCU']}
+      - -std=c99
+      - -D"$": COLLECTION_DEFINES_TEST_AND_VENDOR
+      - -I"$": COLLECTION_PATHS_TEST_SUPPORT_SOURCE_INCLUDE_VENDOR
+      - "${1}"
+
+  :test_includes_preprocessor:
+    :name: "Microchip XC8 includes preprocessor"
+    :executable: xc8-cc
+    :arguments:
+      - -mcpu=#{ENV['MCU']}
+      - -std=c99
+      - -D"$": COLLECTION_DEFINES_TEST_AND_VENDOR
+      - -I"$": COLLECTION_PATHS_TEST_SUPPORT_SOURCE_INCLUDE_VENDOR
+      - "${1}"
+
+  :test_linker:
+    :name: "Microchip XC8 Linker"
+    :executable: xc8-cc
+    :arguments:
+      - -mcpu=#{ENV['MCU']}
+      - -gdwarf-3
+      - -D"$": COLLECTION_DEFINES_TEST_AND_VENDOR
+      - -I"$": COLLECTION_PATHS_TEST_SUPPORT_SOURCE_INCLUDE_VENDOR
+      - -Wl,-Map="${3}"
+      - -o"./build/ceedling/generated/test/out/test_build.elf"
+      - "{'${1}'.split(' ').map { |x| (x.include? '/out/c/') ? (Pathname(x).sub_ext('.p1')).to_s : x }.join(' ') }"
+      - "${4}"
+
+  :test_fixture:
+    :executable: ruby
+    :name: "Microchip simulator test fixture"
+    :stderr_redirect: :win #inform Ceedling what model of $stderr capture to use
+    :arguments:
+      - test/simulation/sim_test_fixture.rb
+
+
+:plugins:
+  :load_paths:
+    - vendor/ceedling/plugins
+  :enabled:
+    - stdout_pretty_tests_report
+    - module_generator
+    - raw_output_report
+    - warnings_report

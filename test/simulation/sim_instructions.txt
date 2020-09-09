@@ -1,0 +1,16 @@
+device PIC16F18345
+set oscillator.frequency            32
+set oscillator.frequencyunit        Mega
+set oscillator.rcfrequency          31
+set oscillator.rcfrequencyunit      Kilo
+set uart1io.uartioenabled           true
+set uart1io.output                  stdout
+set uart1io.outputfile              test/simulation/test.txt
+set breakoptions.wdtwarnings        Ignore
+
+hwtool sim
+
+program build/ceedling/generated/test/out/test_build.elf
+run
+Sleep 5000
+quit
