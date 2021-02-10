@@ -70,7 +70,7 @@
   :treat_externs: :include
   :enforce_strict_ordering: TRUE
   :fail_on_unexpected_calls: FALSE
-  :has_setjmp_h: FALSE
+  :exclude_setjmp_h: TRUE
   :defines:
     - CMOCK_MEM_SIZE=256
   :plugins:
